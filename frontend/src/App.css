@@ -1,0 +1,29 @@
+/* Button styles for tasks and admin */
+button {
+    cursor: pointer;
+  }
+  
+  .edit-button, .delete-button {
+    padding: 5px 10px;
+    border-radius: 4px;
+    border: none;
+  }
+  
+  .edit-button {
+    background-color: #ffc107;
+    color: white;
+  }
+  
+  .edit-button:hover {
+    background-color: #e0a800;
+  }
+  
+  .delete-button {
+    background-color: #dc3545;
+    color: white;
+  }
+  
+  .delete-button:hover {
+    background-color: #c82333;
+  }
+  

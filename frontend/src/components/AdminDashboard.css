@@ -1,0 +1,40 @@
+/* AdminDashboard.css */
+.admin-dashboard-container {
+    padding: 20px;
+  }
+  
+  .user-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .user-item {
+    background: #ffffff;
+    padding: 15px;
+    border-radius: 5px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  }
+  
+  .user-item p {
+    margin: 0;
+  }
+  
+  .delete-user-button {
+    padding: 5px 10px;
+    background-color: #dc3545;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+  }
+  
+  .delete-user-button:hover {
+    background-color: #c82333;
+  }
+  
+  .error-message {
+    color: red;
+    font-size: 0.875em;
+  }
+  
