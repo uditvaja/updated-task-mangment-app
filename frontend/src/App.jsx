@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
 import Login from './components/Login';
 import Tasks from './components/Tasks';
@@ -6,6 +6,9 @@ import AdminDashboard from './components/AdminDashboard';
 import Register from './components/Register';
 import Navbar from './components/Navbar';
 import { requestPermission, onMessageListener } from './firebase';
+import { io } from 'socket.io-client';
+
+const socket = io('http://localhost:3000'); // Adjust this URL based on your backend
 
 const PrivateRoute = ({ children }) => {
   const token = localStorage.getItem('token');
@@ -19,13 +22,24 @@ const AdminRoute = ({ children }) => {
 };
 
 const App = () => {
+  const [tasks, setTasks] = useState([]); // State to manage tasks
+
   useEffect(() => {
-    // Request permission and listen for messages
     requestPermission();
     onMessageListener().then((payload) => {
       console.log('Message received:', payload);
-      // Handle the received notification here
     });
+
+    // Listen for task updates from the server
+    socket.on('task-updated', (taskData) => {
+      console.log('Task updated:', taskData);
+      setTasks((prevTasks) => [...prevTasks, taskData]);
+    });
+
+    // Cleanup on component unmount
+    return () => {
+      socket.disconnect();
+    };
   }, []);
 
   return (
@@ -39,7 +53,7 @@ const App = () => {
           path="/tasks"
           element={
             <PrivateRoute>
-              <Tasks />
+              <Tasks tasks={tasks} /> {/* Pass tasks to Tasks component */}
             </PrivateRoute>
           }
         />
