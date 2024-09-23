@@ -1,0 +1,68 @@
+/* Tasks.css */
+.task-list-container {
+    max-width: 800px;
+    margin: 20px auto;
+    padding: 20px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background-color: #f9f9f9;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+  
+  .task-list-container h3 {
+    text-align: center;
+    color: #333;
+  }
+  
+  .btn-create {
+    display: block;
+    margin: 10px auto 20px;
+    padding: 10px 20px;
+    background-color: #007bff;
+    color: white;
+    text-align: center;
+    border-radius: 5px;
+    text-decoration: none;
+    transition: background-color 0.3s;
+  }
+  
+  .btn-create:hover {
+    background-color: #0056b3;
+  }
+  
+  .task-list {
+    list-style: none;
+    padding: 0;
+  }
+  
+  .task-item {
+    padding: 15px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    margin-bottom: 10px;
+    background-color: white;
+    transition: box-shadow 0.3s;
+  }
+  
+  .task-item:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+  
+  .task-details p {
+    margin: 5px 0;
+  }
+  
+  @media (max-width: 600px) {
+    .task-list-container {
+      padding: 15px;
+    }
+  
+    .btn-create {
+      padding: 8px 16px;
+    }
+  
+    .task-item {
+      padding: 10px;
+    }
+  }
+  

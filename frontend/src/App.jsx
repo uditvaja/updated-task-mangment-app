@@ -7,8 +7,13 @@ import Register from './components/Register';
 import Navbar from './components/Navbar';
 import { requestPermission, onMessageListener } from './firebase';
 import { io } from 'socket.io-client';
-
-const socket = io('http://localhost:3000'); // Adjust this URL based on your backend
+import './App.css';
+import CSVUpload from './components/CSVUpload';
+import ExportTasksButton from './components/Exporttasks';
+import CreateTask from './components/Createtask';
+import TaskList from './components/Tasks';
+import AlltaskList from './components/AllTaskList';
+const socket = io('http://localhost:3000'); 
 
 const PrivateRoute = ({ children }) => {
   const token = localStorage.getItem('token');
@@ -22,7 +27,7 @@ const AdminRoute = ({ children }) => {
 };
 
 const App = () => {
-  const [tasks, setTasks] = useState([]); // State to manage tasks
+  const [tasks, setTasks] = useState([]); 
 
   useEffect(() => {
     requestPermission();
@@ -30,18 +35,29 @@ const App = () => {
       console.log('Message received:', payload);
     });
 
-    // Listen for task updates from the server
+  
     socket.on('task-updated', (taskData) => {
       console.log('Task updated:', taskData);
       setTasks((prevTasks) => [...prevTasks, taskData]);
     });
 
-    // Cleanup on component unmount
+    
     return () => {
       socket.disconnect();
     };
   }, []);
-
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker
+      .register('/firebase-messaging-sw.js')
+      .then((registration) => {
+        console.log('Service Worker registered with scope:', registration.scope);
+      })
+      .catch((error) => {
+        console.error('Service Worker registration failed:', error);
+      });
+  }
+  
+  
   return (
     <Router>
       <Navbar />
@@ -49,11 +65,16 @@ const App = () => {
         <Route path="/" element={<Login />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/csv" element={<CSVUpload />} />
+        <Route path="/alltasklist" element={<AlltaskList/>} />
+        <Route path="/createtask" element={<CreateTask />} />
+        
+        <Route path="/csvexport" element={<ExportTasksButton />} />
         <Route
           path="/tasks"
           element={
             <PrivateRoute>
-              <Tasks tasks={tasks} /> {/* Pass tasks to Tasks component */}
+              <Tasks tasks={tasks} /> 
             </PrivateRoute>
           }
         />
@@ -65,6 +86,7 @@ const App = () => {
             </AdminRoute>
           }
         />
+
       </Routes>
     </Router>
   );

@@ -19,12 +19,15 @@ const Login = () => {
       const response = await axios.post('http://localhost:3000/api/auth/login', { email, password, fcmToken });
       localStorage.setItem('token', response.data.token);
       localStorage.setItem('role', response.data.user.role);
+      localStorage.setItem('user',response.data.user._id);
+
+console.log(response.data.user._id);
 
       // Redirect based on role
       if (response.data.user.role === 'admin') {
         navigate('/admin-dashboard');
       } else {
-        navigate('/tasks');
+        navigate('/alltasklist');
       }
     } catch (error) {
       setError('Login failed. Please check your credentials.');

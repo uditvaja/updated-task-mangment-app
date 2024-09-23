@@ -1,12 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import io from 'socket.io-client';
-import './Tasks.css';
+import './Tasks.css'; // Make sure to style this file properly for better UI
+
 const socket = io('http://localhost:3000');
 
 const TaskList = () => {
   const [tasks, setTasks] = useState([]);
-  const [newTask, setNewTask] = useState({ description: '', category: '' });
+  const [newTask, setNewTask] = useState({ description: '', category: '', assignedTo: '', dueDate: '', status: '' });
   const [editingTask, setEditingTask] = useState(null);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     const fetchTasks = async () => {
@@ -36,7 +38,9 @@ const TaskList = () => {
     });
 
     socket.on('taskUpdated', (updatedTask) => {
-      setTasks((prevTasks) => prevTasks.map((task) => (task._id === updatedTask._id ? updatedTask : task)));
+      setTasks((prevTasks) =>
+        prevTasks.map((task) => (task._id === updatedTask._id ? updatedTask : task))
+      );
     });
 
     socket.on('taskDeleted', (deletedTaskId) => {
@@ -50,104 +54,163 @@ const TaskList = () => {
     };
   }, []);
 
+  const user = localStorage.getItem('user');
+
   const handleCreateTask = async () => {
     try {
+      if (!newTask.description || !newTask.category || !newTask.dueDate || !newTask.status) {
+        setError('All fields are required.');
+        return;
+      }
+
+      const taskToCreate = {
+        ...newTask,
+        assignedTo: user, // Automatically set assignedTo based on logged-in user
+      };
+
       const response = await fetch('http://localhost:3000/api/tasks', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(newTask),
+        body: JSON.stringify(taskToCreate),
       });
       if (!response.ok) throw new Error('Failed to create task');
       const createdTask = await response.json();
-      setNewTask({ description: '', category: '' }); // Clear input fields
+      setTasks((prevTasks) => [...prevTasks, createdTask]);
+      setNewTask({ description: '', category: '', assignedTo: '', dueDate: '', status: '' });
+      setError('');
     } catch (error) {
       console.error(error.message);
+      setError('Failed to create task');
     }
   };
 
-  const handleUpdateTask = async (task) => {
+  const handleUpdateTask = (task) => {
     setEditingTask(task);
-    setNewTask({ description: task.description, category: task.category });
+    setNewTask({
+      description: task.description,
+      category: task.category,
+      assignedTo: task.assignedTo,
+      dueDate: task.dueDate,
+      status: task.status,
+    });
   };
 
-  const handleSaveTask = async (taskId, updatedTask) => {
+  const handleSaveTask = async () => {
     try {
-        const response = await fetch(`http://localhost:3000/api/tasks/${taskId}`, {
-            method: 'PUT',
-            headers: {
-                'Authorization': `Bearer ${localStorage.getItem('token')}`,
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(updatedTask),
-        });
+      if (!newTask.description || !newTask.category || !newTask.dueDate || !newTask.status) {
+        setError('All fields are required.');
+        return;
+      }
 
-        if (!response.ok) {
-            throw new Error('Failed to update task');
-        }
+      const taskToUpdate = {
+        ...newTask,
+        assignedTo: user,
+      };
 
-        const data = await response.json();
-        console.log('Task updated:', data);
-        // Update local state if necessary
-    } catch (error) {
-        console.error('Failed to update task:', error);
-    }
-};
-
-const handleDeleteTask = async (taskId) => {
-  try {
-      const response = await fetch(`http://localhost:3000/api/tasks/${taskId}`, {
-          method: 'DELETE',
-          headers: {
-              'Authorization': `Bearer ${localStorage.getItem('token')}`,
-              'Content-Type': 'application/json',
-          },
+      const response = await fetch(`http://localhost:3000/api/tasks/${editingTask._id}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(taskToUpdate),
       });
 
       if (!response.ok) {
-          throw new Error('Failed to delete task');
+        throw new Error('Failed to update task');
       }
 
-      const data = await response.json();
-      console.log(data.message); // Log success message
-      // Update local state to remove the deleted task if necessary
-  } catch (error) {
-      console.error('Failed to delete task:', error);
-  }
-};
+      const updatedTask = await response.json();
+      setTasks((prevTasks) =>
+        prevTasks.map((task) => (task._id === updatedTask._id ? updatedTask : task))
+      );
+      setEditingTask(null);
+      setNewTask({ description: '', category: '', assignedTo: '', dueDate: '', status: '' });
+      setError('');
+    } catch (error) {
+      console.error('Failed to update task:', error);
+      setError('Failed to update task');
+    }
+  };
 
+  const handleDeleteTask = async (taskId) => {
+    try {
+      const response = await fetch(`http://localhost:3000/api/tasks/${taskId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete task');
+      }
+
+      setTasks((prevTasks) => prevTasks.filter((task) => task._id !== taskId));
+    } catch (error) {
+      console.error('Failed to delete task:', error);
+    }
+  };
 
   return (
-    <div>
-      <h3>Task List</h3>
-      <ul>
-        {tasks.map((task) => (
-          <li key={task._id}>
-            {task.description} ({task.category})
-            <button onClick={() => handleUpdateTask(task)}>Edit</button>
-            <button onClick={() => handleDeleteTask(task._id)}>Delete</button>
+    <div className="task-container">
+    <h4>{editingTask ? 'Edit Task' : 'Create Task'}</h4>
+    <input
+      type="text"
+      placeholder="Description"
+      value={newTask.description}
+      onChange={(e) => setNewTask({ ...newTask, description: e.target.value })}
+    />
+    <input
+      type="text"
+      placeholder="Category"
+      value={newTask.category}
+      onChange={(e) => setNewTask({ ...newTask, category: e.target.value })}
+    />
+    <input
+      type="date"
+      placeholder="Due Date"
+      value={newTask.dueDate}
+      onChange={(e) => setNewTask({ ...newTask, dueDate: e.target.value })}
+    />
+    <select
+      value={newTask.status}
+      onChange={(e) => setNewTask({ ...newTask, status: e.target.value })}
+    >
+      <option value="">Select Status</option>
+      <option value="pending">Pending</option>
+      <option value="in-progress">In Progress</option>
+      <option value="completed">Completed</option>
+    </select>
+    <button onClick={editingTask ? handleSaveTask : handleCreateTask} className="btn-submit">
+      {editingTask ? 'Save Task' : 'Add Task'}
+    </button>
+  
+    <h3>Task List</h3>
+    {error && <p className="error-message">{error}</p>}
+    <ul className="task-list">
+    {tasks.map((task) => (
+          <li key={task._id} className="task-item">
+            <div className="task-details">
+              <p><strong>Description:</strong> {task.description}</p>
+              <p><strong>Category:</strong> {task.category}</p>
+              <p><strong>Due Date:</strong> {new Date(task.dueDate).toLocaleDateString()}</p>
+              <p><strong>Status:</strong> {task.status}</p>
+            </div>
+            <div className="task-actions">
+              <button onClick={() => handleUpdateTask(task)} className="btn-edit">Edit</button>
+              <button onClick={() => handleDeleteTask(task._id)} className="btn-delete">Delete</button>
+            </div>
           </li>
         ))}
-      </ul>
-      <h4>{editingTask ? 'Edit Task' : 'Create Task'}</h4>
-      <input
-        type="text"
-        placeholder="Description"
-        value={newTask.description}
-        onChange={(e) => setNewTask({ ...newTask, description: e.target.value })}
-      />
-      <input
-        type="text"
-        placeholder="Category"
-        value={newTask.category}
-        onChange={(e) => setNewTask({ ...newTask, category: e.target.value })}
-      />
-      <button onClick={editingTask ? handleSaveTask : handleCreateTask}>
-        {editingTask ? 'Save' : 'Add Task'}
-      </button>
-    </div>
+
+    </ul>
+  </div>
+  
   );
 };
 
